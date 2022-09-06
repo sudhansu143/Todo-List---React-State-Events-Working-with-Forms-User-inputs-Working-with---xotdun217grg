@@ -1,96 +1,112 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "./../styles/App.css";
 
+const Edit = ({ inputValue, index, handleEditChange, saveEdit }) => {
+  return (
+    <div className="edit-mode">
+      <input
+        className="editTask"
+        type={"text"}
+        placeholder={"edit task here..."}
+        value={inputValue}
+        onChange={(e) => handleEditChange(e, index)}
+      />
+      <button className="saveTask" onClick={() => saveEdit(index)}>
+        save
+      </button>
+    </div>
+  );
+};
+
 function App() {
-  const [todos, setTodos] = useState([]);
-  const [todo, setTodo] = useState("");
-  const [todoEditing, setTodoEditing] = useState(null);
-  const [editingText, setEditingText] = useState("");
+  const [tasks, setTasks] = useState([]);
+  const [currentValue, setCurrentValue] = useState({
+    edit_mode: false,
+    value: "",
+  });
 
-  useEffect(() => {
-    const json = localStorage.getItem("todos");
-    const loadedTodos = JSON.parse(json);
-    if (loadedTodos) {
-      setTodos(loadedTodos);
-    }
-  }, []);
+  const addTodo = () => {
+    if (currentValue.value === "") return;
+    setTasks([...tasks, currentValue]);
+    setCurrentValue({ edit_mode: false, value: "" });
+  };
 
-  useEffect(() => {
-    const json = JSON.stringify(todos);
-    localStorage.setItem("todos", json);
-  }, [todos]);
+  const deleteTodo = (index) => {
+    const new_tasks = [...tasks];
+    new_tasks.splice(index, 1);
+    setTasks([...new_tasks]);
+  };
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  const toggleEditMode = (index) => {
+    const toggle_tasks = [...tasks];
+    toggle_tasks[index].edit_mode = true;
+    setTasks([...toggle_tasks]);
+  };
 
-    const newTodo = {
-      id: new Date().getTime(),
-      text: todo,
-      completed: false,
-    };
-    setTodos([...todos].concat(newTodo));
-    setTodo("");
-  }
-  function deleteTodo(id) {
-    let updatedTodos = [...todos].filter((todo) => todo.id !== id);
-    setTodos(updatedTodos);
-  }
+  const handleEditChange = (e, index) => {
+    const edit_task = [...tasks];
+    edit_task[index].value = e.target.value;
+    setTasks([...edit_task]);
+  };
 
-  function submitEdits(id) {
-    const updatedTodos = [...todos].map((todo) => {
-      if (todo.id === id) {
-        todo.text = editingText;
-      }
-      return todo;
-    });
-    setTodos(updatedTodos);
-    setTodoEditing(null);
-  }
+  const saveEdit = (index) => {
+    if (tasks[index].value === "") return;
+    const save_tasks = [...tasks];
+    save_tasks[index].edit_mode = false;
+    setTasks([...save_tasks]);
+  };
+
   return (
     <div id="main">
-      <h1>Todo List</h1>
-      <form onSubmit={handleSubmit}>
-        <textarea
+      <div>
+        <input
           id="task"
-          onChange={(e) => setTodo(e.target.value)}
-          value={todo}
+          type={"text"}
+          placeholder={"Add your todo here..."}
+          value={currentValue.value}
+          onChange={(e) =>
+            setCurrentValue({ ...currentValue, value: e.target.value })
+          }
         />
-        <button type="submit" id="btn">
-          Add Todo
+        <button id="btn" onClick={addTodo}>
+          Add Tod
         </button>
-      </form>
-      {todos.map((todo) => (
-        <div key={todo.id} className="todo">
-          <div className="todo-text">
-            {todo.id === todoEditing ? (
-              <textarea
-                className="edit"
-                onChange={(e) => setEditingText(e.target.value)}
-              />
-            ) : (
-              <div>{todo.text}</div>
-            )}
-          </div>
-          <div className="todo-actions">
-            {todo.id === todoEditing ? (
-              <button className="saveTask" onClick={() => submitEdits(todo.id)}>
-                Save
-              </button>
-            ) : (
-              <button
-                className="editTask"
-                onClick={() => setTodoEditing(todo.id)}
-              >
-                Edit
-              </button>
-            )}
-
-            <button className="delete" onClick={() => deleteTodo(todo.id)}>
-              Delete
-            </button>
-          </div>
-        </div>
-      ))}
+      </div>
+      <div>
+        <ul>
+          {tasks.map((data, index) => {
+            const { edit_mode, value } = data;
+            return (
+              <div key={index}>
+                {edit_mode ? (
+                  <Edit
+                    inputValue={value}
+                    index={index}
+                    handleEditChange={handleEditChange}
+                    saveEdit={saveEdit}
+                  />
+                ) : (
+                  <div className="lists">
+                    <li className="list">{value}</li>
+                    <button
+                      className="edit"
+                      onClick={() => toggleEditMode(index)}
+                    >
+                      edit
+                    </button>
+                    <button
+                      className="delete"
+                      onClick={() => deleteTodo(index)}
+                    >
+                      delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }
